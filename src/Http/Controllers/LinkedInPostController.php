@@ -16,9 +16,16 @@ use Kistlak\LinkedinPoster\Actions\CreateMergedImageAction;
 
 class LinkedInPostController
 {
-    public function linkedinShareIndex($model, $id, CreateMergedImageAction $createMergedImageAction)
+    public function linkedinShareIndex(string $model, int $id, CreateMergedImageAction $createMergedImageAction)
     {
-        $event = $model::findOrFail($id);
+		$allowedModels = config('linkedin-share.models');
+
+        if (!array_key_exists($model, $allowedModels)) {
+            abort(404, 'Invalid model type.');
+        }
+		
+		$modelClass = $allowedModels[$model];
+        $event = $modelClass::findOrFail($id);
 
         if(!Session::has('linkedin_token')) {
             return redirect(route('linkedin.redirect', $event->id));
@@ -93,8 +100,8 @@ class LinkedInPostController
 
     public function shareToLinkedIn(
         Request                 $request,
-                                $model,
-                                $id,
+        string                        $model,
+        int                        $id,
         GetImageUploadUrlAction $linkedInGetImageUploadUrlAction,
         UploadImageAction       $uploadImageAction,
         CreateMergedImageAction $createMergedImageAction,
@@ -110,8 +117,16 @@ class LinkedInPostController
                 Session::put('linkedin_event_id', $id);
                 return redirect()->route('linkedin.redirect', ['id' => $id])->with('error', 'Please reconnect LinkedIn.');
             }
+			
+			$allowedModels = config('linkedin-share.models');
 
-            $event = $model::findOrFail($id);
+            if (!array_key_exists($model, $allowedModels)) {
+				abort(404, 'Invalid model type.');
+            }
+		
+			$modelClass = $allowedModels[$model];
+
+            $event = $modelClass::findOrFail($id);
             $owner = 'urn:li:person:' . $linkedinId;
 
             $register = $linkedInGetImageUploadUrlAction->execute($token, $owner);

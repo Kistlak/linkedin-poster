@@ -8,4 +8,11 @@ return [
     // Optional extras
     'default_avatar' => '/images/default-avatar.jpg',
     'image_temp_path' => 'tmp', // relative to storage/app/public/
+	
+	// Allowed Eloquent models that can be shared
+    'models' => [
+        'event' => \App\Models\Event::class,
+        // 'post'  => \App\Models\Post::class,
+        // Add more models as needed
+    ],
 ];
