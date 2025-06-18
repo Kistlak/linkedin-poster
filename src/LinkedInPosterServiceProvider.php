@@ -10,12 +10,12 @@ class LinkedInPosterServiceProvider extends ServiceProvider
     {
         $this->loadRoutesFrom(__DIR__.'/routes/web.php');
         $this->loadViewsFrom(__DIR__.'/resources/views', 'linkedin-poster');
-        $this->mergeConfigFrom(__DIR__ . '/config/linkedin-share.php', 'linkedin-share');
+        $this->mergeConfigFrom(__DIR__.'/../config/linkedin-share.php', 'linkedin-share');
 
         // Allow publishing config to app's config folder
         $this->publishes([
-            __DIR__ . '/config/linkedin-share.php' => config_path('linkedin-share.php'),
-        ], 'linkedin-config');
+			__DIR__.'/../config/linkedin-share.php' => config_path('linkedin-share.php'),
+		], 'linkedin-config');
     }
 
     public function register() {}
