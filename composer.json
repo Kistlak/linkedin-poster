@@ -1,0 +1,23 @@
+{
+    "name": "kistlak/linkedin-poster",
+    "description": "Laravel package to share posts to LinkedIn",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Kistlak\\LinkedinPoster\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Kistlak\\LinkedinPoster\\LinkedInServiceProvider"
+            ]
+        }
+    },
+    "require": {
+        "php": "^8.0",
+        "guzzlehttp/guzzle": "^7.0",
+        "intervention/image": "^2.7"
+    }
+}
