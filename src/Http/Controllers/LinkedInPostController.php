@@ -100,8 +100,8 @@ class LinkedInPostController
 
     public function shareToLinkedIn(
         Request                 $request,
-        string                        $model,
-        int                        $id,
+        string                  $model,
+        int                     $id,
         GetImageUploadUrlAction $linkedInGetImageUploadUrlAction,
         UploadImageAction       $uploadImageAction,
         CreateMergedImageAction $createMergedImageAction,

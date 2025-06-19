@@ -13,7 +13,7 @@ class GetAccessTokenAction
             $response = Http::asForm()->post('https://www.linkedin.com/oauth/v2/accessToken', [
                 'grant_type' => 'authorization_code',
                 'code' => $code,
-                'redirect_uri' => config('linkedin-share.redirect'),
+                'redirect_uri' => config('linkedin-share.redirect_uri'),
                 'client_id' => config('linkedin-share.client_id'),
                 'client_secret' => config('linkedin-share.client_secret'),
             ]);
