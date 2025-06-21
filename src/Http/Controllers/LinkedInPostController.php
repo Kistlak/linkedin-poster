@@ -18,27 +18,45 @@ class LinkedInPostController
 {
     public function linkedinShareIndex(string $model, int $id, CreateMergedImageAction $createMergedImageAction)
     {
-		$allowedModels = config('linkedin-share.models');
+        $modelsConfig = config('linkedin-share.models');
 
-        if (!array_key_exists($model, $allowedModels)) {
+        if (!array_key_exists($model, $modelsConfig)) {
             abort(404, 'Invalid model type.');
         }
-		
-		$modelClass = $allowedModels[$model];
+
+        $modelConfig = $modelsConfig[$model];
+        $modelClass = $modelConfig['class'];
+        $imageAccessor = $modelConfig['image_accessor'] ?? null;
+
         $event = $modelClass::findOrFail($id);
 
-        if(!Session::has('linkedin_token')) {
+        if (!Session::has('linkedin_token')) {
             return redirect(route('linkedin.redirect', $event->id));
         }
 
-        $profileImageUrl = Session::get('linkedin_profile_picture', asset('images/default-avatar.jpg'));
-        $eventImage = $event->linkedin_post_image ?? asset('images/event-img-1.jpg');
-        $mergedImagePath = $createMergedImageAction->execute($eventImage, $profileImageUrl);
+        $profileImageUrl = Session::get('linkedin_profile_picture', asset(config('linkedin-share.default_avatar')));
 
-        $relativePath = str_replace(storage_path('app/public/'), '', $mergedImagePath); // tmp/filename.jpg
-        $mergedImageUrl = asset('storage/' . $relativePath); // or Storage::url($relativePath) if disk is configured
+        // Dynamically resolve image accessor
+        $eventImage = asset('images/event-img-1.jpg'); // fallback
 
-        return view('frontend.linkedin-share', compact('event', 'mergedImageUrl'));
+        if ($imageAccessor) {
+            if (method_exists($event, $imageAccessor)) {
+                $eventImage = $event->{$imageAccessor}();
+            } elseif (isset($event->{$imageAccessor})) {
+                $eventImage = $event->{$imageAccessor};
+            }
+        }
+
+        $linkedInPostImgPath = (config('linkedin-share.add_profile_picture_on_the_banner')) ?
+            $createMergedImageAction->execute($eventImage, $profileImageUrl) :
+            $eventImage;
+
+        $relativePath = str_replace(storage_path('app/public/'), '', $linkedInPostImgPath);
+        $linkedInPostImgUrl = asset('storage/' . $relativePath);
+
+        Session::put('linkedin_post_img_path', $linkedInPostImgPath);
+
+        return view('frontend.linkedin-share', compact('event', 'linkedInPostImgUrl'));
     }
 
     public function redirectToLinkedIn($id, GetAuthorizationAction $getAuthorizationAction)
@@ -104,7 +122,6 @@ class LinkedInPostController
         int                     $id,
         GetImageUploadUrlAction $linkedInGetImageUploadUrlAction,
         UploadImageAction       $uploadImageAction,
-        CreateMergedImageAction $createMergedImageAction,
         CreatePostAction        $linkedInCreatePostAction
     )
     {
@@ -117,16 +134,17 @@ class LinkedInPostController
                 Session::put('linkedin_event_id', $id);
                 return redirect()->route('linkedin.redirect', ['id' => $id])->with('error', 'Please reconnect LinkedIn.');
             }
-			
-			$allowedModels = config('linkedin-share.models');
 
-            if (!array_key_exists($model, $allowedModels)) {
-				abort(404, 'Invalid model type.');
+            $modelsConfig = config('linkedin-share.models');
+
+            if (!array_key_exists($model, $modelsConfig)) {
+                abort(404, 'Invalid model type.');
             }
-		
-			$modelClass = $allowedModels[$model];
 
+            $modelConfig = $modelsConfig[$model];
+            $modelClass = $modelConfig['class'];
             $event = $modelClass::findOrFail($id);
+
             $owner = 'urn:li:person:' . $linkedinId;
 
             $register = $linkedInGetImageUploadUrlAction->execute($token, $owner);
@@ -138,16 +156,13 @@ class LinkedInPostController
             $uploadUrl = $register['value']['uploadMechanism']['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest']['uploadUrl'];
             $asset = $register['value']['asset'];
 
-            // Merge image
-            $eventImageUrl = $event->linkedin_post_image ?? asset('images/event-img-1.jpg');
-            $profileImageUrl = Session::get('linkedin_profile_picture', asset('images/default-avatar.jpg'));
-            $mergedImagePath = $createMergedImageAction->execute($eventImageUrl, $profileImageUrl);
+            $linkedInPostImgPath = Session::get('linkedin_post_img_path');
 
-            if (!$mergedImagePath || !file_exists($mergedImagePath)) {
+            if (!$linkedInPostImgPath || !file_exists($linkedInPostImgPath)) {
                 return back()->with('error', 'Failed to generate merged image.');
             }
 
-            $uploadResponse = $uploadImageAction->execute($mergedImagePath, $token, $uploadUrl);
+            $uploadResponse = $uploadImageAction->execute($linkedInPostImgPath, $token, $uploadUrl);
 
             if (!$uploadResponse) {
                 return back()->with('error', 'Image upload to LinkedIn failed.');

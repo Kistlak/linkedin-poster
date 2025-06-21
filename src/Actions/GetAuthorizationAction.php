@@ -19,7 +19,7 @@ class GetAuthorizationAction
             $query = http_build_query([
                 'response_type' => 'code',
                 'client_id' => config('linkedin-share.client_id'),
-                'redirect_uri' => config('linkedin-share.redirect'),
+                'redirect_uri' => config('linkedin-share.redirect_uri'),
                 'scope' => 'openid profile email w_member_social',
                 'state' => $state,
             ]);

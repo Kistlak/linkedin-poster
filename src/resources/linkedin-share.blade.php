@@ -49,7 +49,7 @@
                         <h5 class="mb-0">LinkedIn Post Preview</h5>
                     </div>
 
-                    <img src="{{ $mergedImageUrl ?? asset('images/event-img-1.jpg') }}" alt="Event Image" class="event-image mb-3 rounded">
+                    <img src="{{ $linkedInPostImgUrl ?? asset('images/event-img-1.jpg') }}" alt="Event Image" class="event-image mb-3 rounded">
 
                     <form method="POST" action="{{ route('linkedin.share', $event->id) }}">
                         @csrf
